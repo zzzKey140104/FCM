@@ -31,7 +31,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 	@Override
 	public void onNewToken(String token) {
 		Log.d("FCM", "New token: " + token);
-		TokenUploader.uploadToken(token, "MyPhone");
+		// Không tự động upload token, chỉ log để debug
+		// Token sẽ được upload thủ công qua nút "Lưu token vào database"
 	}
 
 	private void createNotificationChannel() {

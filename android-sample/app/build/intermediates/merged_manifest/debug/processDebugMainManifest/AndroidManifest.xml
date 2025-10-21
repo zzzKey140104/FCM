@@ -28,7 +28,8 @@
         android:label="FcmTokenSample"
         android:supportsRtl="true"
         android:testOnly="true"
-        android:theme="@style/AppTheme" >
+        android:theme="@style/AppTheme"
+        android:usesCleartextTraffic="true" >
         <activity
             android:name="com.example.fcmtest.MainActivity"
             android:exported="true"

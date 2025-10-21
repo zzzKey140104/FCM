@@ -1,15 +1,18 @@
 package com.example.fcmtest;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -39,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
 		root.setPadding(pad, pad, pad, pad);
 
 		statusView = new TextView(this);
-		statusView.setText("Fetching FCM token...");
+		statusView.setText("Nhấn 'Lấy token' để bắt đầu");
 		root.addView(statusView);
 
 		tokenView = new TextView(this);
@@ -49,18 +52,25 @@ public class MainActivity extends AppCompatActivity {
 		root.addView(scroll, new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1));
 
 		Button refreshBtn = new Button(this);
-		refreshBtn.setText("Lấy lại token");
+		refreshBtn.setText("Lấy token");
 		refreshBtn.setOnClickListener(new View.OnClickListener() {
 			@Override public void onClick(View v) { fetchToken(); }
 		});
 		root.addView(refreshBtn);
 
 		Button forceRefreshBtn = new Button(this);
-		forceRefreshBtn.setText("Force Refresh Token");
+		forceRefreshBtn.setText("Lấy lại token");
 		forceRefreshBtn.setOnClickListener(new View.OnClickListener() {
 			@Override public void onClick(View v) { forceRefreshToken(); }
 		});
 		root.addView(forceRefreshBtn);
+
+		Button saveTokenBtn = new Button(this);
+		saveTokenBtn.setText("Lưu token vào database");
+		saveTokenBtn.setOnClickListener(new View.OnClickListener() {
+			@Override public void onClick(View v) { saveTokenToDatabase(); }
+		});
+		root.addView(saveTokenBtn);
 
 		Button copyBtn = new Button(this);
 		copyBtn.setText("Sao chép token");
@@ -70,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
 		root.addView(copyBtn);
 
 		setContentView(root);
-		fetchToken();
+		// Không tự động lấy token khi mở app
 	}
 
 	private void requestNotificationPermission() {
@@ -85,23 +95,20 @@ public class MainActivity extends AppCompatActivity {
 
 	private void fetchToken() {
 		statusView.setText("Đang lấy token...");
-		// Force refresh token by deleting and getting new one
-		FirebaseMessaging.getInstance().deleteToken()
-				.addOnCompleteListener(deleteTask -> {
-					FirebaseMessaging.getInstance().getToken()
-							.addOnCompleteListener(task -> {
-								if (!task.isSuccessful()) {
-									statusView.setText("Lấy token thất bại: " + task.getException().getMessage());
-									Log.e("FCM", "Failed to get token", task.getException());
-									return;
-								}
-								String token = task.getResult();
-								Log.d("FCM", "token=" + token);
-								Log.d("FCM", "token length=" + (token != null ? token.length() : "null"));
-								Log.d("FCM", "token valid format=" + isValidFCMToken(token));
-								tokenView.setText(token);
-								statusView.setText("Đã lấy token mới thành công");
-							});
+		// Chỉ lấy token hiện tại, không xóa token cũ
+		FirebaseMessaging.getInstance().getToken()
+				.addOnCompleteListener(task -> {
+					if (!task.isSuccessful()) {
+						statusView.setText("Lấy token thất bại: " + task.getException().getMessage());
+						Log.e("FCM", "Failed to get token", task.getException());
+						return;
+					}
+					String token = task.getResult();
+					Log.d("FCM", "token=" + token);
+					Log.d("FCM", "token length=" + (token != null ? token.length() : "null"));
+					Log.d("FCM", "token valid format=" + isValidFCMToken(token));
+					tokenView.setText(token);
+					statusView.setText("Đã lấy token thành công");
 				});
 	}
 	
@@ -151,5 +158,53 @@ public class MainActivity extends AppCompatActivity {
 		ClipData clip = ClipData.newPlainText("FCM Token", token);
 		clipboard.setPrimaryClip(clip);
 		Toast.makeText(this, "Đã sao chép token", Toast.LENGTH_SHORT).show();
+	}
+
+	private void saveTokenToDatabase() {
+		String token = tokenView.getText().toString();
+		if (token.isEmpty()) {
+			Toast.makeText(this, "Chưa có token để lưu", Toast.LENGTH_SHORT).show();
+			return;
+		}
+		
+		// Tạo dialog để nhập label
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setTitle("Nhập label cho token");
+		builder.setMessage("Nhập tên thiết bị hoặc label để nhận diện token này:");
+		
+		// Tạo EditText để nhập label
+		final EditText input = new EditText(this);
+		input.setHint("Ví dụ: MyPhone, Samsung Galaxy, iPhone...");
+		input.setText("MyPhone"); // Giá trị mặc định
+		builder.setView(input);
+		
+		// Nút OK
+		builder.setPositiveButton("Lưu", new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				String label = input.getText().toString().trim();
+				if (label.isEmpty()) {
+					label = "MyPhone"; // Giá trị mặc định nếu để trống
+				}
+				
+				statusView.setText("Đang lưu token vào database...");
+				TokenUploader.uploadToken(token, label);
+				
+				// Hiển thị thông báo thành công sau khi upload
+				Toast.makeText(MainActivity.this, "Đã gửi token đến server với label: " + label, Toast.LENGTH_SHORT).show();
+				statusView.setText("Token đã được gửi đến server với label: " + label);
+			}
+		});
+		
+		// Nút Cancel
+		builder.setNegativeButton("Hủy", new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				dialog.cancel();
+			}
+		});
+		
+		// Hiển thị dialog
+		builder.show();
 	}
 }

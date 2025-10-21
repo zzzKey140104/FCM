@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:2:1-29:12
-INJECTED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:2:1-29:12
-INJECTED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:2:1-29:12
-INJECTED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:2:1-29:12
+ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:2:1-30:12
+INJECTED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:2:1-30:12
+INJECTED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:2:1-30:12
+INJECTED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:2:1-30:12
 MERGED from [com.google.firebase:firebase-messaging:24.0.1] C:\Users\khanh\.gradle\caches\9.0-milestone-1\transforms\519f85cb686e02840254622066f9ecf7\transformed\jetified-firebase-messaging-24.0.1\AndroidManifest.xml:17:1-66:12
 MERGED from [com.google.android.material:material:1.12.0] C:\Users\khanh\.gradle\caches\9.0-milestone-1\transforms\fa1cfffeb32a0625860f621cd89b29aa\transformed\material-1.12.0\AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.appcompat:appcompat-resources:1.7.0] C:\Users\khanh\.gradle\caches\9.0-milestone-1\transforms\abb921f668482c1f6fd1e6b4c5d2cd61\transformed\jetified-appcompat-resources-1.7.0\AndroidManifest.xml:2:1-7:12
@@ -88,8 +88,8 @@ MERGED from [com.google.firebase:firebase-messaging:24.0.1] C:\Users\khanh\.grad
 	android:name
 		ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:4:19-71
 application
-ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:6:2-28:16
-INJECTED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:6:2-28:16
+ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:6:2-29:16
+INJECTED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:6:2-29:16
 MERGED from [com.google.firebase:firebase-messaging:24.0.1] C:\Users\khanh\.gradle\caches\9.0-milestone-1\transforms\519f85cb686e02840254622066f9ecf7\transformed\jetified-firebase-messaging-24.0.1\AndroidManifest.xml:28:5-64:19
 MERGED from [com.google.firebase:firebase-messaging:24.0.1] C:\Users\khanh\.gradle\caches\9.0-milestone-1\transforms\519f85cb686e02840254622066f9ecf7\transformed\jetified-firebase-messaging-24.0.1\AndroidManifest.xml:28:5-64:19
 MERGED from [com.google.android.material:material:1.12.0] C:\Users\khanh\.gradle\caches\9.0-milestone-1\transforms\fa1cfffeb32a0625860f621cd89b29aa\transformed\material-1.12.0\AndroidManifest.xml:22:5-20
@@ -144,36 +144,38 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\khanh\.gradle\cach
 		ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:7:3-29
 	android:theme
 		ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:10:3-34
+	android:usesCleartextTraffic
+		ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:11:3-38
 activity#com.example.fcmtest.MainActivity
-ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:11:3-19:14
+ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:12:3-20:14
 	android:exported
-		ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:13:4-27
+		ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:14:4-27
 	android:theme
-		ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:14:4-35
+		ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:15:4-35
 	android:name
-		ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:12:4-32
+		ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:13:4-32
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:15:4-18:20
+ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:16:4-19:20
 action#android.intent.action.MAIN
-ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:16:5-56
+ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:17:5-56
 	android:name
-		ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:16:13-54
+		ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:17:13-54
 category#android.intent.category.LAUNCHER
-ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:17:5-64
+ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:18:5-64
 	android:name
-		ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:17:15-62
+		ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:18:15-62
 service#com.example.fcmtest.MyFirebaseMessagingService
-ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:21:3-27:13
+ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:22:3-28:13
 	android:exported
-		ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:23:4-28
+		ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:24:4-28
 	android:name
-		ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:22:4-46
+		ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:23:4-46
 intent-filter#action:name:com.google.firebase.MESSAGING_EVENT
-ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:24:4-26:20
+ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:25:4-27:20
 action#com.google.firebase.MESSAGING_EVENT
-ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:25:5-65
+ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:26:5-65
 	android:name
-		ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:25:13-63
+		ADDED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml:26:13-63
 uses-sdk
 INJECTED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from C:\Users\khanh\Documents\CODE\LTM\android-sample\app\src\main\AndroidManifest.xml
