@@ -11,7 +11,7 @@ import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.List;
 
-@WebServlet(name = "ServerServlet", urlPatterns = {"/register", "/send", "/test-token", "/debug-token", "/test-service-account"})
+@WebServlet(name = "ServerServlet", urlPatterns = {"/register", "/send", "/test-token", "/debug-token", "/test-service-account", "/devices", "/send-selected"})
 public class ServerServlet extends HttpServlet {
 	private transient DatabaseHelper db;
 	private transient FCMSender fcm;
@@ -53,6 +53,36 @@ public class ServerServlet extends HttpServlet {
 					return;
 				}
 				
+				try {
+					String result = fcm.sendToTokens(tokens, title == null ? "" : title, body == null ? "" : body);
+					out.write("{\"result\":\"" + escapeForJson(result) + "\"}");
+				} catch (IllegalArgumentException e) {
+					resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+					out.write("{\"error\":\"" + escapeForJson(e.getMessage()) + "\"}");
+				}
+				return;
+			}
+			if ("/send-selected".equals(path)) {
+				String title = req.getParameter("title");
+				String body = req.getParameter("body");
+				String[] idParams = req.getParameterValues("ids[]");
+				if (idParams == null) idParams = req.getParameterValues("ids");
+				if (idParams == null || idParams.length == 0) {
+					resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+					out.write("{\"error\":\"No device ids provided\"}");
+					return;
+				}
+				new java.util.ArrayList<Integer>();
+				java.util.List<Integer> ids = new java.util.ArrayList<>();
+				for (String s : idParams) {
+					try { ids.add(Integer.parseInt(s)); } catch (NumberFormatException ignored) {}
+				}
+				List<String> tokens = db.getTokensByIds(ids);
+				if (tokens.isEmpty()) {
+					resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+					out.write("{\"error\":\"No tokens found for ids\"}");
+					return;
+				}
 				try {
 					String result = fcm.sendToTokens(tokens, title == null ? "" : title, body == null ? "" : body);
 					out.write("{\"result\":\"" + escapeForJson(result) + "\"}");
@@ -116,6 +146,41 @@ public class ServerServlet extends HttpServlet {
 			Thread.currentThread().interrupt();
 			resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			resp.getWriter().write("{\"error\":\"fcm interrupted\"}");
+		}
+	}
+
+	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+		String path = req.getServletPath();
+		resp.setContentType("application/json; charset=UTF-8");
+		try (PrintWriter out = resp.getWriter()) {
+			if ("/devices".equals(path)) {
+				try {
+					java.util.List<DeviceDto> devices = db.getAllDevices();
+					StringBuilder sb = new StringBuilder();
+					sb.append('[');
+					for (int i = 0; i < devices.size(); i++) {
+						DeviceDto d = devices.get(i);
+						sb.append("{\"id\":").append(d.id)
+							.append(",\"token\":\"").append(escapeForJson(d.token)).append("\"")
+							.append(",\"label\":\"").append(escapeForJson(d.label)).append("\"}");
+						if (i < devices.size() - 1) sb.append(',');
+					}
+					sb.append(']');
+					out.write(sb.toString());
+					return;
+				} catch (Exception e) {
+					resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+					out.write("{\"error\":\"failed to load devices\"}");
+					return;
+				}
+			}
+			resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+			out.write("{\"error\":\"not found\"}");
+		}
+		catch (Exception e) {
+			resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			resp.getWriter().write("{\"error\":\"server error\"}");
 		}
 	}
 

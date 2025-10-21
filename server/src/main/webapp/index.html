@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LTM Push Console</title>
+    <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <style>
+    .container { max-width: 980px; }
+    .token-cell { font-family: monospace; font-size: 12px; word-break: break-all; }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar navbar-default">
+      <div class="container">
+        <div class="navbar-header"><a class="navbar-brand" href="#">LTM Push Console</a></div>
+      </div>
+    </nav>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <h3>Thiết bị đã đăng ký</h3>
+          <div class="form-inline" style="margin-bottom:10px;">
+            <button id="btnReload" class="btn btn-default"><i class="fa fa-refresh"></i> Tải lại</button>
+            <button id="btnSelectAll" class="btn btn-default">Chọn tất cả</button>
+            <button id="btnClear" class="btn btn-default">Bỏ chọn</button>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+              <thead>
+                <tr>
+                  <th style="width:40px"></th>
+                  <th style="width:80px">ID</th>
+                  <th style="width:220px">Label</th>
+                  <th>Token</th>
+                </tr>
+              </thead>
+              <tbody id="deviceTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <hr>
+      <div class="row">
+        <div class="col-md-12">
+          <h3>Gửi thông báo</h3>
+          <div class="form-horizontal">
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Title</label>
+              <div class="col-sm-10"><input id="title" class="form-control" placeholder="Nhập tiêu đề"></div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Body</label>
+              <div class="col-sm-10"><input id="body" class="form-control" placeholder="Nhập nội dung"></div>
+            </div>
+            <div class="form-group">
+              <div class="col-sm-offset-2 col-sm-10">
+                <button id="btnSend" class="btn btn-primary"><i class="fa fa-paper-plane"></i> Gửi</button>
+              </div>
+            </div>
+          </div>
+          <pre id="output" style="height:160px; overflow:auto;"></pre>
+        </div>
+      </div>
+    </div>
+
+    <script src="/assets/js/jquery-2.1.3.min.js"></script>
+    <script src="/assets/js/bootstrap.js"></script>
+    <script>
+      function loadDevices(){
+        $.getJSON('/devices').done(function(list){
+          var $tb = $('#deviceTbody').empty();
+          list.forEach(function(d){
+            var tr = $('<tr/>');
+            tr.append('<td><input type="checkbox" class="pick" data-id="'+d.id+'"></td>');
+            tr.append('<td>'+d.id+'</td>');
+            tr.append('<td>'+(d.label||'')+'</td>');
+            tr.append('<td class="token-cell">'+d.token+'</td>');
+            $tb.append(tr);
+          });
+        }).fail(function(xhr){
+          appendOut('Tải danh sách lỗi: '+xhr.status+': '+xhr.responseText);
+        });
+      }
+      function appendOut(s){
+        var $o = $('#output');
+        $o.text($o.text()+s+'\n');
+        $o.scrollTop($o.prop('scrollHeight'));
+      }
+      function send(){
+        var ids = [];
+        $('.pick:checked').each(function(){ ids.push($(this).data('id')); });
+        if(ids.length===0){ appendOut('Vui lòng chọn ít nhất 1 thiết bị'); return; }
+        var data = { title: $('#title').val()||'', body: $('#body').val()||'' };
+        ids.forEach(function(id, idx){ data['ids['+idx+']']=id; });
+        $.ajax({
+          url: '/send-selected',
+          method: 'POST',
+          data: data,
+          success: function(text){ appendOut('Gửi thành công: '+text); },
+          error: function(xhr){ appendOut('Lỗi gửi: '+xhr.status+': '+xhr.responseText); }
+        });
+      }
+      $('#btnReload').on('click', loadDevices);
+      $('#btnSelectAll').on('click', function(){ $('.pick').prop('checked', true); });
+      $('#btnClear').on('click', function(){ $('.pick').prop('checked', false); });
+      $('#btnSend').on('click', send);
+      $(function(){ loadDevices(); });
+    </script>
+  </body>
+ </html>
+
+

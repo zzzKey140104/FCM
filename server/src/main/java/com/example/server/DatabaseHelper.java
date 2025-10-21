@@ -45,4 +45,39 @@ public class DatabaseHelper {
 		}
 		return tokens;
 	}
+
+	public List<DeviceDto> getAllDevices() throws SQLException {
+		String sql = "SELECT id, token, COALESCE(label, '') FROM device ORDER BY id DESC";
+		List<DeviceDto> devices = new ArrayList<>();
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					devices.add(new DeviceDto(rs.getInt(1), rs.getString(2), rs.getString(3)));
+				}
+			}
+		}
+		return devices;
+	}
+
+	public List<String> getTokensByIds(List<Integer> ids) throws SQLException {
+		if (ids == null || ids.isEmpty()) return List.of();
+		StringBuilder placeholders = new StringBuilder();
+		for (int i = 0; i < ids.size(); i++) {
+			if (i > 0) placeholders.append(',');
+			placeholders.append('?');
+		}
+		String sql = "SELECT token FROM device WHERE id IN (" + placeholders + ")";
+		List<String> tokens = new ArrayList<>();
+		try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+			for (int i = 0; i < ids.size(); i++) {
+				ps.setInt(i + 1, ids.get(i));
+			}
+			try (ResultSet rs = ps.executeQuery()) {
+				while (rs.next()) {
+					tokens.add(rs.getString(1));
+				}
+			}
+		}
+		return tokens;
+	}
 }

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LTM Push Console</title>
+    <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <style>
+    .container { max-width: 980px; }
+    .token-cell { font-family: monospace; font-size: 12px; word-break: break-all; }
+    .navbar-brand { font-weight: bold; }
+    .btn-group .btn { margin-right: 5px; }
+    .table th { background-color: #f5f5f5; }
+    .form-control { margin-bottom: 10px; }
+    .output-log { background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 10px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-default">
+        <div class="container">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="#">
+                    <i class="fa fa-mobile"></i> LTM Push Console
+                </a>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h3><i class="fa fa-list"></i> Thiết bị đã đăng ký</h3>
+                <div class="btn-group" style="margin-bottom:15px;">
+                    <button id="btnReload" class="btn btn-primary">
+                        <i class="fa fa-refresh"></i> Tải lại
+                    </button>
+                    <button id="btnSelectAll" class="btn btn-success">
+                        <i class="fa fa-check-square-o"></i> Chọn tất cả
+                    </button>
+                    <button id="btnClear" class="btn btn-warning">
+                        <i class="fa fa-square-o"></i> Bỏ chọn
+                    </button>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                <th style="width:40px">
+                                    <input type="checkbox" id="selectAllCheckbox">
+                                </th>
+                                <th style="width:80px">ID</th>
+                                <th style="width:220px">Label</th>
+                                <th>Token</th>
+                            </tr>
+                        </thead>
+                        <tbody id="deviceTbody">
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">
+                                    <i class="fa fa-spinner fa-spin"></i> Đang tải danh sách thiết bị...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <hr>
+        
+        <div class="row">
+            <div class="col-md-12">
+                <h3><i class="fa fa-paper-plane"></i> Gửi thông báo</h3>
+                <form id="sendForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="title">Tiêu đề:</label>
+                                <input type="text" id="title" class="form-control" placeholder="Nhập tiêu đề thông báo">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="body">Nội dung:</label>
+                                <input type="text" id="body" class="form-control" placeholder="Nhập nội dung thông báo">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <button type="submit" id="btnSend" class="btn btn-primary btn-lg">
+                            <i class="fa fa-send"></i> Gửi thông báo
+                        </button>
+                        <span id="selectedCount" class="text-muted" style="margin-left: 15px;"></span>
+                    </div>
+                </form>
+                
+                <div class="output-log">
+                    <h5><i class="fa fa-terminal"></i> Kết quả:</h5>
+                    <pre id="output" style="height:160px; overflow:auto; margin:0;"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/assets/js/jquery-2.1.3.min.js"></script>
+    <script src="/assets/js/bootstrap.js"></script>
+    <script>
+        $(document).ready(function() {
+            loadDevices();
+            updateSelectedCount();
+        });
+        
+        function loadDevices() {
+            $('#deviceTbody').html('<tr><td colspan="4" class="text-center text-muted"><i class="fa fa-spinner fa-spin"></i> Đang tải...</td></tr>');
+            
+            $.getJSON('/api/devices')
+                .done(function(response) {
+                    var data = parseResponse(response);
+                    if (data && Array.isArray(data)) {
+                        displayDevices(data);
+                    } else {
+                        appendOut('Lỗi: Không thể parse dữ liệu thiết bị');
+                        $('#deviceTbody').html('<tr><td colspan="4" class="text-center text-danger">Không có thiết bị nào</td></tr>');
+                    }
+                })
+                .fail(function(xhr) {
+                    appendOut('Lỗi tải danh sách: ' + xhr.status + ': ' + xhr.responseText);
+                    $('#deviceTbody').html('<tr><td colspan="4" class="text-center text-danger">Lỗi tải danh sách thiết bị</td></tr>');
+                });
+        }
+        
+        function parseResponse(response) {
+            if (typeof response === 'string') {
+                var parts = response.split(':', 2);
+                if (parts.length === 2) {
+                    var statusCode = parseInt(parts[0]);
+                    var body = parts[1];
+                    if (statusCode === 200) {
+                        try {
+                            return JSON.parse(body);
+                        } catch (e) {
+                            appendOut('Lỗi parse JSON: ' + e.message);
+                            return null;
+                        }
+                    } else {
+                        appendOut('Server error: ' + statusCode + ' - ' + body);
+                        return null;
+                    }
+                }
+            }
+            return response;
+        }
+        
+        function displayDevices(devices) {
+            var $tb = $('#deviceTbody').empty();
+            if (devices.length === 0) {
+                $tb.append('<tr><td colspan="4" class="text-center text-muted">Không có thiết bị nào được đăng ký</td></tr>');
+                return;
+            }
+            
+            devices.forEach(function(d) {
+                var tr = $('<tr/>');
+                tr.append('<td><input type="checkbox" class="pick" data-id="' + d.id + '"></td>');
+                tr.append('<td>' + d.id + '</td>');
+                tr.append('<td>' + (d.label || '') + '</td>');
+                tr.append('<td class="token-cell">' + d.token + '</td>');
+                $tb.append(tr);
+            });
+            
+            updateSelectedCount();
+        }
+        
+        function updateSelectedCount() {
+            var count = $('.pick:checked').length;
+            var total = $('.pick').length;
+            $('#selectedCount').text('Đã chọn: ' + count + '/' + total + ' thiết bị');
+        }
+        
+        function appendOut(s) {
+            var $o = $('#output');
+            var timestamp = new Date().toLocaleTimeString();
+            $o.text($o.text() + '[' + timestamp + '] ' + s + '\n');
+            $o.scrollTop($o.prop('scrollHeight'));
+        }
+        
+        function send() {
+            var ids = [];
+            $('.pick:checked').each(function() { 
+                ids.push($(this).data('id')); 
+            });
+            
+            if (ids.length === 0) { 
+                appendOut('❌ Vui lòng chọn ít nhất 1 thiết bị'); 
+                return; 
+            }
+            
+            var title = $('#title').val() || '';
+            var body = $('#body').val() || '';
+            
+            if (!title && !body) {
+                appendOut('❌ Vui lòng nhập tiêu đề hoặc nội dung');
+                return;
+            }
+            
+            appendOut('📤 Đang gửi thông báo đến ' + ids.length + ' thiết bị...');
+            
+            // Build form data as object with array
+            var formData = {
+                title: title,
+                body: body,
+                'ids[]': ids
+            };
+            
+            $.ajax({
+                url: '/api/send',
+                method: 'POST',
+                data: formData,
+                traditional: true, // This is important for array serialization
+                success: function(response) {
+                    var result = parseResponse(response);
+                    if (result && result.success) {
+                        appendOut('✅ ' + result.message);
+                        if (result.details) {
+                            appendOut('📋 Chi tiết: ' + JSON.stringify(result.details));
+                        }
+                    } else if (result && result.result) {
+                        appendOut('✅ Gửi thành công: ' + result.result);
+                    } else if (result && result.error) {
+                        appendOut('❌ Lỗi: ' + result.error);
+                    } else {
+                        appendOut('📋 Kết quả: ' + response);
+                    }
+                },
+                error: function(xhr) {
+                    appendOut('❌ Lỗi gửi: ' + xhr.status + ': ' + xhr.responseText);
+                }
+            });
+        }
+        
+        // Event handlers
+        $('#btnReload').on('click', loadDevices);
+        $('#btnSelectAll').on('click', function() { 
+            $('.pick').prop('checked', true); 
+            updateSelectedCount();
+        });
+        $('#btnClear').on('click', function() { 
+            $('.pick').prop('checked', false); 
+            updateSelectedCount();
+        });
+        $('#selectAllCheckbox').on('change', function() {
+            $('.pick').prop('checked', this.checked);
+            updateSelectedCount();
+        });
+        $(document).on('change', '.pick', updateSelectedCount);
+        $('#sendForm').on('submit', function(e) {
+            e.preventDefault();
+            send();
+        });
+    </script>
+</body>
+</html>
