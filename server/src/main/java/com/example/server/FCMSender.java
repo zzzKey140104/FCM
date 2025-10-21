@@ -25,7 +25,6 @@ public class FCMSender {
 
 	public String sendToTokens(List<String> tokens, String title, String body) throws IOException, InterruptedException {
 		String url = "https://fcm.googleapis.com/v1/projects/" + projectId + "/messages:send";
-		String json = buildJson(tokens, title, body);
 		String accessToken = getAccessToken();
 		
 		// Debug logging
@@ -35,18 +34,56 @@ public class FCMSender {
 		for (int i = 0; i < tokens.size(); i++) {
 			System.out.println("Token " + i + ": " + tokens.get(i));
 		}
-		System.out.println("JSON payload: " + json);
 		System.out.println("Access token length: " + (accessToken != null ? accessToken.length() : "null"));
 		System.out.println("=====================");
 		
-		HttpRequest request = HttpRequest.newBuilder()
-				.uri(URI.create(url))
-				.header("Content-Type", "application/json; charset=UTF-8")
-				.header("Authorization", "Bearer " + accessToken)
-				.POST(HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8))
-				.build();
-		HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-		return response.statusCode() + ":" + response.body();
+		// Send to each token individually
+		StringBuilder results = new StringBuilder();
+		int successCount = 0;
+		int failCount = 0;
+		
+		for (int i = 0; i < tokens.size(); i++) {
+			String token = tokens.get(i);
+			String json = buildJsonForSingleToken(token, title, body);
+			
+			System.out.println("Sending to token " + i + ": " + token);
+			System.out.println("JSON payload: " + json);
+			
+			try {
+				HttpRequest request = HttpRequest.newBuilder()
+						.uri(URI.create(url))
+						.header("Content-Type", "application/json; charset=UTF-8")
+						.header("Authorization", "Bearer " + accessToken)
+						.POST(HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8))
+						.build();
+				HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+				
+				if (response.statusCode() == 200) {
+					successCount++;
+					System.out.println("Success for token " + i + ": " + response.body());
+				} else {
+					failCount++;
+					System.out.println("Failed for token " + i + ": " + response.statusCode() + " - " + response.body());
+				}
+				
+				if (results.length() > 0) results.append("; ");
+				results.append("Token ").append(i).append(": ").append(response.statusCode()).append(":").append(response.body());
+				
+			} catch (Exception e) {
+				failCount++;
+				System.err.println("Exception for token " + i + ": " + e.getMessage());
+				if (results.length() > 0) results.append("; ");
+				results.append("Token ").append(i).append(": ERROR:").append(e.getMessage());
+			}
+		}
+		
+		String summary = String.format("Sent to %d devices: %d success, %d failed. Details: %s", 
+				tokens.size(), successCount, failCount, results.toString());
+		System.out.println("=== FCM Send Summary ===");
+		System.out.println(summary);
+		System.out.println("========================");
+		
+		return "200:" + summary;
 	}
 
 	public String getAccessToken() throws IOException {
@@ -65,27 +102,33 @@ public class FCMSender {
 		}
 	}
 
-	private String buildJson(List<String> tokens, String title, String body) {
-		// FCM v1 format: send to first token only
-		String singleToken = tokens.isEmpty() ? "" : tokens.get(0);
-		
-		// Validate token format
-		if (singleToken.isEmpty()) {
+	private String buildJsonForSingleToken(String token, String title, String body) {
+		// Validate token
+		if (token == null || token.trim().isEmpty()) {
 			throw new IllegalArgumentException("No token provided");
 		}
-		if (!isValidFCMToken(singleToken)) {
-			throw new IllegalArgumentException("Invalid FCM token format: " + singleToken);
+		if (!isValidFCMToken(token)) {
+			throw new IllegalArgumentException("Invalid FCM token format: " + token);
 		}
 		
 		StringBuilder sb = new StringBuilder();
 		sb.append("{\"message\":{")
-				.append("\"token\":\"").append(escape(singleToken)).append("\",")
+				.append("\"token\":\"").append(escape(token)).append("\",")
 				.append("\"notification\":{")
 				.append("\"title\":\"").append(escape(title)).append("\",")
 				.append("\"body\":\"").append(escape(body)).append("\"")
 				.append("}")
 				.append("}}");
 		return sb.toString();
+	}
+	
+	// Keep the old method for backward compatibility, but it now uses the new approach
+	private String buildJson(List<String> tokens, String title, String body) {
+		// This method is now deprecated in favor of sendToTokens which handles multiple tokens properly
+		if (tokens.isEmpty()) {
+			throw new IllegalArgumentException("No tokens provided");
+		}
+		return buildJsonForSingleToken(tokens.get(0), title, body);
 	}
 	
 	public boolean isValidFCMToken(String token) {

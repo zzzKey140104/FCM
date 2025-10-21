@@ -219,22 +219,102 @@
                 data: formData,
                 traditional: true, // This is important for array serialization
                 success: function(response) {
-                    var result = parseResponse(response);
+                    console.log('Success response type:', typeof response);
+                    console.log('Success response:', response);
+                    
+                    // Handle both string and object responses
+                    var result;
+                    if (typeof response === 'string') {
+                        // Parse string response like "200: {...}"
+                        var parts = response.split(':', 2);
+                        if (parts.length === 2) {
+                            var statusCode = parseInt(parts[0]);
+                            var body = parts[1];
+                            console.log('Parsed status code:', statusCode);
+                            console.log('Parsed body:', body);
+                            
+                            if (statusCode === 200) {
+                                try {
+                                    result = JSON.parse(body);
+                                    console.log('Parsed JSON result:', result);
+                                } catch (e) {
+                                    appendOut('Lỗi parse JSON: ' + e.message);
+                                    return;
+                                }
+                            } else {
+                                appendOut('❌ Server error: ' + statusCode + ' - ' + body);
+                                return;
+                            }
+                        } else {
+                            appendOut('❌ Invalid response format: ' + response);
+                            return;
+                        }
+                    } else {
+                        result = response;
+                    }
+                    
+                    // Process the parsed result
                     if (result && result.success) {
                         appendOut('✅ ' + result.message);
                         if (result.details) {
-                            appendOut('📋 Chi tiết: ' + JSON.stringify(result.details));
+                            appendOut('📋 Chi tiết: ' + result.details);
                         }
                     } else if (result && result.result) {
                         appendOut('✅ Gửi thành công: ' + result.result);
                     } else if (result && result.error) {
-                        appendOut('❌ Lỗi: ' + result.error);
+                        appendOut('Lỗi: ' + result.error);
                     } else {
-                        appendOut('📋 Kết quả: ' + response);
+                        appendOut('📋 Kết quả: ' + JSON.stringify(result, null, 2));
                     }
                 },
                 error: function(xhr) {
-                    appendOut('❌ Lỗi gửi: ' + xhr.status + ': ' + xhr.responseText);
+                    console.log('Error response:', xhr.responseText);
+                    
+                    // Check if this is actually a success response with 200 status
+                    if (xhr.status === 200) {
+                        // This is actually a success response, parse it
+                        var response = xhr.responseText;
+                        console.log('Error callback - Response type:', typeof response);
+                        console.log('Error callback - Response content:', response);
+                        console.log('Error callback - Status:', xhr.status);
+                        
+                        // Parse string response like "200: {...}"
+                        var parts = response.split(':', 2);
+                        if (parts.length === 2) {
+                            var statusCode = parseInt(parts[0]);
+                            var body = parts[1];
+                            console.log('Error callback - Parsed status code:', statusCode);
+                            console.log('Error callback - Parsed body:', body);
+                            
+                            if (statusCode === 200) {
+                                try {
+                                    var result = JSON.parse(body);
+                                    console.log('Error callback - Parsed JSON result:', result);
+                                    
+                                    // Process the parsed result
+                                    if (result && result.success) {
+                                        appendOut('✅ ' + result.message);
+                                        if (result.details) {
+                                            appendOut('📋 Chi tiết: ' + result.details);
+                                        }
+                                    } else if (result && result.result) {
+                                        appendOut('✅ Gửi thành công: ' + result.result);
+                                    } else if (result && result.error) {
+                                        appendOut('Lỗi: ' + result.error);
+                                    } else {
+                                        appendOut('📋 Kết quả: ' + JSON.stringify(result, null, 2));
+                                    }
+                                    return;
+                                } catch (e) {
+                                    appendOut('Lỗi parse JSON: ' + e.message);
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // If we get here, it's a real error
+                    appendOut(xhr.responseText);
                 }
             });
         }

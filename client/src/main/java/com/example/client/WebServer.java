@@ -149,6 +149,7 @@ public class WebServer {
         protected void doPost(HttpServletRequest req, HttpServletResponse resp) 
                 throws ServletException, IOException {
             resp.setContentType("application/json; charset=UTF-8");
+            resp.setCharacterEncoding("UTF-8");
             
             try {
                 String title = req.getParameter("title");
@@ -181,46 +182,70 @@ public class WebServer {
                     formData.append("&ids[]=").append(URLEncoder.encode(ids[i], StandardCharsets.UTF_8));
                 }
                 
-                String response = post(SERVER_URL + "/send-selected", formData.toString());
-                // Parse the "statusCode:body" format and return just the JSON body
-                if (response.contains(":")) {
-                    String[] parts = response.split(":", 2);
-                    int statusCode = Integer.parseInt(parts[0]);
-                    String responseBody = parts[1];
-                    if (statusCode == 200) {
-                        // Check if responseBody is wrapped in another JSON object
-                        if (responseBody.trim().startsWith("{\"result\":")) {
-                            // Extract the inner JSON from {"result":"200:{...}"}
-                            try {
-                                com.google.gson.JsonObject outerJson = gson.fromJson(responseBody, com.google.gson.JsonObject.class);
-                                String innerResult = outerJson.get("result").getAsString();
-                                if (innerResult.contains(":")) {
-                                    String[] innerParts = innerResult.split(":", 2);
-                                    int innerStatus = Integer.parseInt(innerParts[0]);
-                                    String innerBody = innerParts[1];
-                                    if (innerStatus == 200) {
-                                        resp.getWriter().write("{\"success\":true,\"message\":\"Notification sent successfully\",\"details\":" + innerBody + "}");
-                                    } else {
-                                        resp.getWriter().write("{\"error\":\"FCM error: " + innerBody + "\"}");
+                // Call server directly and get proper response
+                HttpURLConnection conn = (HttpURLConnection) new URL(SERVER_URL + "/send-selected").openConnection();
+                conn.setRequestMethod("POST");
+                conn.setDoOutput(true);
+                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+                
+                byte[] bytes = formData.toString().getBytes(StandardCharsets.UTF_8);
+                conn.setFixedLengthStreamingMode(bytes.length);
+                
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(bytes);
+                }
+                
+                int statusCode = conn.getResponseCode();
+                String responseBody;
+                try (InputStream is = conn.getInputStream()) {
+                    responseBody = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                } catch (IOException e) {
+                    try (InputStream es = conn.getErrorStream()) {
+                        responseBody = es != null ? new String(es.readAllBytes(), StandardCharsets.UTF_8) : e.getMessage();
+                    }
+                }
+                
+                if (statusCode == 200) {
+                    // Check if responseBody is wrapped in another JSON object
+                    if (responseBody.trim().startsWith("{\"result\":")) {
+                        // Extract the inner JSON from {"result":"200:{...}"}
+                        try {
+                            com.google.gson.JsonObject outerJson = gson.fromJson(responseBody, com.google.gson.JsonObject.class);
+                            String innerResult = outerJson.get("result").getAsString();
+                            if (innerResult.contains(":")) {
+                                String[] innerParts = innerResult.split(":", 2);
+                                int innerStatus = Integer.parseInt(innerParts[0]);
+                                String innerBody = innerParts[1];
+                                if (innerStatus == 200) {
+                                    // Parse the inner body as JSON and create proper response
+                                    try {
+                                        com.google.gson.JsonObject detailsJson = gson.fromJson(innerBody, com.google.gson.JsonObject.class);
+                                        String finalResponse = "{\"success\":true,\"message\":\"Notification sent successfully\",\"details\":" + detailsJson.toString() + "}";
+                                        System.out.println("Sending response: " + finalResponse);
+                                        resp.getWriter().write(finalResponse);
+                                    } catch (Exception e) {
+                                        String finalResponse = "{\"success\":true,\"message\":\"Notification sent successfully\",\"details\":\"" + innerBody + "\"}";
+                                        System.out.println("Sending response (fallback): " + finalResponse);
+                                        resp.getWriter().write(finalResponse);
                                     }
                                 } else {
-                                    resp.getWriter().write("{\"success\":true,\"message\":\"Notification sent successfully\",\"details\":" + innerResult + "}");
+                                    resp.getWriter().write("{\"error\":\"FCM error: " + innerBody + "\"}");
                                 }
-                            } catch (Exception e) {
-                                resp.getWriter().write("{\"success\":true,\"message\":\"Notification sent successfully\",\"details\":" + responseBody + "}");
+                            } else {
+                                resp.getWriter().write("{\"success\":true,\"message\":\"Notification sent successfully\",\"details\":\"" + innerResult + "\"}");
                             }
-                        } else if (responseBody.trim().startsWith("{")) {
-                            resp.getWriter().write(responseBody);
-                        } else {
-                            // Wrap in success response
-                            resp.getWriter().write("{\"success\":true,\"message\":\"Notification sent successfully\",\"details\":" + responseBody + "}");
+                        } catch (Exception e) {
+                            resp.getWriter().write("{\"success\":true,\"message\":\"Notification sent successfully\",\"details\":\"" + responseBody + "\"}");
                         }
+                    } else if (responseBody.trim().startsWith("{")) {
+                        resp.getWriter().write(responseBody);
                     } else {
-                        resp.setStatus(statusCode);
-                        resp.getWriter().write("{\"error\":\"Server error: " + responseBody + "\"}");
+                        // Wrap in success response
+                        resp.getWriter().write("{\"success\":true,\"message\":\"Notification sent successfully\",\"details\":\"" + responseBody + "\"}");
                     }
                 } else {
-                    resp.getWriter().write(response);
+                    resp.setStatus(statusCode);
+                    resp.getWriter().write("{\"error\":\"Server error: " + responseBody + "\"}");
                 }
             } catch (Exception e) {
                 resp.setStatus(500);
