@@ -1,0 +1,5 @@
+com.example.fcmtest.test.app-androidTest-0 C:\Users\khanh\Documents\CODE\LTM\android-sample\app\build\generated\res\resValues\androidTest\debug
+com.example.fcmtest.test.app-updated_navigation_xml-1 C:\Users\khanh\Documents\CODE\LTM\android-sample\app\build\generated\updated_navigation_xml\debugAndroidTest
+com.example.fcmtest.test.app-mergeDebugAndroidTestResources-2 C:\Users\khanh\Documents\CODE\LTM\android-sample\app\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\merged.dir
+com.example.fcmtest.test.app-mergeDebugAndroidTestResources-3 C:\Users\khanh\Documents\CODE\LTM\android-sample\app\build\intermediates\incremental\debugAndroidTest\mergeDebugAndroidTestResources\stripped.dir
+com.example.fcmtest.test.app-debugAndroidTest-4 C:\Users\khanh\Documents\CODE\LTM\android-sample\app\build\intermediates\merged_res\debugAndroidTest\mergeDebugAndroidTestResources

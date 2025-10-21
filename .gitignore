@@ -1,0 +1,25 @@
+# Maven
+/target/
+**/target/
+
+# IntelliJ
+.idea/
+*.iml
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Java
+*.class
+
+# Cursor/agent
+.cursor/
+
+server/ltmck-90f36-firebase-adminsdk-fbsvc-4424fdba48.json
